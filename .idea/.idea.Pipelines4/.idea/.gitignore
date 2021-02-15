@@ -2,12 +2,12 @@
 /shelf/
 /workspace.xml
 # Rider ignored files
-/modules.xml
 /contentModel.xml
-/.idea.ShaderPipelines.iml
+/modules.xml
+/.idea.Pipelines4.iml
 /projectSettingsUpdater.xml
 # Datasource local storage ignored files
-/../../../../../../../:\Repositories\Unity\ShaderPipelines\.idea\.idea.ShaderPipelines\.idea/dataSources/
+/../../../../../../../:\Repositories\Unity\Pipelines4\.idea\.idea.Pipelines4\.idea/dataSources/
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
