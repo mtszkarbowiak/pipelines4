@@ -20,8 +20,8 @@ namespace Pipelines4
         [ReadOnly] public int VertsPerCut;
         [ReadOnly] public float Radius;
         [ReadOnly] public NativeList<Cut> Cuts;
-        [WriteOnly] public NativeArray<ushort> TrIndexes;  
-        [WriteOnly] public NativeArray<UniversalVertex> Vertices;
+        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<ushort> TrIndexes;  
+        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<UniversalVertex> Vertices;
 
 
         public bool ValidateBeforeExecution()
@@ -31,12 +31,13 @@ namespace Pipelines4
             if (VertsPerCut < MIN_VERTS_PER_CUT) return false;
 
             if (VertsPerCut > MAX_VERTS_PER_CUT) return false;
-
-            if (TrIndexes.Length != 0) return false;
-
-            if (Vertices.Length != 0) return false;
             
             return true;
+        }
+
+        public int GetVerticesBufferSize()
+        {
+            return Cuts.Length * VertsPerCut;
         }
 
         public int GetTrIndexesBufferSize()
@@ -44,10 +45,6 @@ namespace Pipelines4
             return (Cuts.Length - 1) * (VertsPerCut - 1) * 3 * 2;
         }
 
-        public int GetVerticesBufferSize()
-        {
-            return Cuts.Length * VertsPerCut;
-        }
         
         
         #if AGGRESSIVE_COMPILATION
@@ -82,14 +79,14 @@ namespace Pipelines4
                 // Local position.
                 var x = math.cos(angle) * Radius;
                 var y = math.sin(angle) * Radius;
-                var localPos = new float3(x, 0.0f, y);
+                var localPos = new float3(x,  y, 0);
                 
                 // Transformed position.
                 var position = math.mul( Cuts[cut].Matrix, localPos );
 
                 var vertex = new UniversalVertex
                 {
-                    Position = position,
+                    Position = position + Cuts[cut].Origin,
                     
                     //TODO
                 };
@@ -101,22 +98,28 @@ namespace Pipelines4
         #if AGGRESSIVE_COMPILATION
         [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
         #endif
-        private void AddTrIndexes(int index)
+        private void AddTrIndexes(int cut)
         {
-            var cutTriShift = index * (VertsPerCut - 1) * 3 * 2;
-            var cutVtxShift = index * VertsPerCut;
-            
-            for (var i = 0; i < VertsPerCut - 1; i++)
+            var cutTrIndexShift = (VertsPerCut - 1) * cut * 6;
+            var cutVertexShift = VertsPerCut * cut;
+
+            for (var s = 0; s < VertsPerCut - 1; s++)
             {
-                var sliceTriShift = cutTriShift + i * 6;
-                var sliceVtxShift = cutVtxShift + i;
+                var sliceIndexShift = cutTrIndexShift + s * 6;
+                var sliceVertexShift = cutVertexShift + s;
                 
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 0);
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 1);
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 2);
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 3);
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 2);
-                TrIndexes[sliceTriShift + 0] = (ushort)(sliceVtxShift + 1);
+                var ll = sliceVertexShift;
+                var lh = sliceVertexShift + 1;
+                var hl = sliceVertexShift + VertsPerCut;
+                var hh = sliceVertexShift + VertsPerCut + 1;
+
+                TrIndexes[sliceIndexShift + 0] = (ushort) hh;
+                TrIndexes[sliceIndexShift + 1] = (ushort) lh;
+                TrIndexes[sliceIndexShift + 2] = (ushort) ll;
+                
+                TrIndexes[sliceIndexShift + 3] = (ushort) ll;
+                TrIndexes[sliceIndexShift + 4] = (ushort) hl;
+                TrIndexes[sliceIndexShift + 5] = (ushort) hh;
             }
         }
     }
