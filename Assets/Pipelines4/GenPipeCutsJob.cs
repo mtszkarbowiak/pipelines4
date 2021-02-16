@@ -1,7 +1,11 @@
-﻿using Unity.Burst;
+﻿using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+
+// Enables Burst and AggressiveInlining
+//#define AGGRESSIVE_COMPILATION
 
 namespace Pipelines4
 {
@@ -25,6 +29,8 @@ namespace Pipelines4
         private float _cachedArmLength;
         private Cut _lastCut;
         
+        
+        
         public bool ValidateBeforeExecution()
         {
             // Check if GlobalUp is normalized.
@@ -46,7 +52,11 @@ namespace Pipelines4
             return Nodes.Length >= 2 && Cuts.IsEmpty;
         }
         
-        //[BurstCompile]
+        
+        
+        #if AGGRESSIVE_COMPILATION
+        [BurstCompile]
+        #endif
         public void Execute(int index)
         {
             // Check if by index caps are to be built...
@@ -69,7 +79,9 @@ namespace Pipelines4
         
 
         
-        //[BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #if AGGRESSIVE_COMPILATION
+        [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #endif
         private void AddStartCap()
         {
             // Check direction of first 'Forward' vector.
@@ -101,7 +113,11 @@ namespace Pipelines4
         }
         
         
-        //[BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
+        
+        #if AGGRESSIVE_COMPILATION
+        [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #endif
         private void AddBend(int nodeIndex)
         {
             // Obtain 
@@ -177,10 +193,18 @@ namespace Pipelines4
         }
 
         
-        //[BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
+        
+        #if AGGRESSIVE_COMPILATION
+        [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #endif
         private void AddEndCap()
         {
+            var endingCut = _lastCut;
             
+            endingCut.Origin = Nodes[Nodes.Length - 1];
+            
+            Cuts.Add(in endingCut);
         }
     }
 }
