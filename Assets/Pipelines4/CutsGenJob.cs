@@ -30,7 +30,8 @@ namespace Pipelines4
         private float3 _cachedArm;
         private float _cachedArmLength;
         private Cut _lastCut;
-        
+        private float _totalSplineLenght;
+        private float3 _lastSplineLenghtPoint;
         
         
         public bool ValidateBeforeExecution()
@@ -111,6 +112,7 @@ namespace Pipelines4
             _lastCut = result;
             _cachedArm = arm;
             _cachedArmLength = armLength;
+            _lastSplineLenghtPoint = Nodes[0];
         }
         
         
@@ -161,11 +163,14 @@ namespace Pipelines4
 
             // Bend center.
             var center = tangentPoint + tangentToCenterVector;
+
+            _totalSplineLenght += math.distance(tangentPoint, _lastSplineLenghtPoint);
             
             // Total cuts number calculation.
             var cutsCount = (int)(armsAngle / CutMaxAngle + 1.5f);
             for (var i = 0; i < cutsCount; i++)
             {
+                // Create 
                 var cutAngle = i / (float)(cutsCount - 1) * armsAngle;
                 var rotator = quaternion.AxisAngle(math.normalize(bendPlaneNormal), cutAngle);
                 
@@ -180,15 +185,20 @@ namespace Pipelines4
                 {
                     Origin = origin,
                     Matrix = new float3x3(cutRight, cutUp, cutForward),
+                    Lenght = _totalSplineLenght + cutAngle * BendRadius,
                 };
-
                 Cuts.Add(in cut);
-                if (i == cutsCount - 1) _lastCut = cut;
+
+                
+                // Cache useful items from last iteration.
+                if (i != cutsCount - 1) continue;
+                
+                _lastCut = cut;
+                _lastSplineLenghtPoint = origin;
             }
             
-            //TODO UV-Scrolling
-            
             // Cache useful items for next iteration.
+            _totalSplineLenght += armsAngle * BendRadius;
             _cachedArm = nextArm;
             _cachedArmLength = nextArmLength;
         }

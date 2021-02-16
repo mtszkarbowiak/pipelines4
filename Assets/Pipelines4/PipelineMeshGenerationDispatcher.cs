@@ -23,7 +23,7 @@ namespace Pipelines4
         private NativeList<float3> _nodesBuffer;
         private NativeList<Cut> _cutsBuffer;
         private JobHandle _cutsGenJobHandle;
-        private NativeArray<ushort> _meshTrindicesBuffer;
+        private NativeArray<ushort> _meshTrIndicesBuffer;
         private NativeArray<UniversalVertex> _meshVerticesBuffer;
         private JobHandle _meshGenJobHandle;
 
@@ -38,7 +38,7 @@ namespace Pipelines4
             
             _nodesBuffer = new NativeList<float3>(64,Allocator.Persistent);
             _cutsBuffer = new NativeList<Cut>(512,Allocator.Persistent);
-            _meshTrindicesBuffer = new NativeArray<ushort>(4096, Allocator.Persistent);
+            _meshTrIndicesBuffer = new NativeArray<ushort>(4096, Allocator.Persistent);
             _meshVerticesBuffer = new NativeArray<UniversalVertex>(1024, Allocator.Persistent);
         }
 
@@ -47,7 +47,7 @@ namespace Pipelines4
             _nodesBuffer.Dispose();
             _cutsBuffer.Dispose();
 
-            _meshTrindicesBuffer.Dispose();
+            _meshTrIndicesBuffer.Dispose();
             _meshVerticesBuffer.Dispose();
         }
 
@@ -83,7 +83,7 @@ namespace Pipelines4
                     VertsPerCut = VerticesPerCut,
                     Radius = Radius,
                     Cuts = _cutsBuffer,
-                    TrIndexes = _meshTrindicesBuffer,
+                    TrIndexes = _meshTrIndicesBuffer,
                     Vertices = _meshVerticesBuffer,
                 };
 
@@ -101,7 +101,7 @@ namespace Pipelines4
                 _mesh.SetIndexBufferParams(trIndicesCount,IndexFormat.UInt16);
                 
                 _mesh.SetVertexBufferData(_meshVerticesBuffer,0,0,verticesCount);
-                _mesh.SetIndexBufferData(_meshTrindicesBuffer, 0, 0, trIndicesCount);
+                _mesh.SetIndexBufferData(_meshTrIndicesBuffer, 0, 0, trIndicesCount);
                 
                 _mesh.SetSubMesh(0, new SubMeshDescriptor
                 {

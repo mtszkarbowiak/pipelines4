@@ -1,6 +1,7 @@
 ﻿using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine.UIElements;
 
 //#define AGGRESSIVE_COMPILATION
 
@@ -70,6 +71,9 @@ namespace Pipelines4
             
             // Radians angle of one cut 'slice' (per vertex, except of last one).
             var angleMult = math.PI * 2 / (VertsPerCut - 1);
+
+            // Anti number to be multiplied by spline lenght to get UV coordinate.
+            var lenghtAntiMult = Radius * math.PI * 2; 
             
             for (var vtx = 0; vtx < VertsPerCut; vtx++)
             {
@@ -79,18 +83,21 @@ namespace Pipelines4
                 // Local position.
                 var x = math.cos(angle);
                 var y = math.sin(angle);
-                var normal = new float3(x,  y, 0);
                 
-                // Transformed position.
-                normal = math.mul( Cuts[cut].Matrix, normal );
+                // Transform normal vector.
+                var normal = math.mul( Cuts[cut].Matrix, new float3(x,  y, 0) );
+                var position = normal * Radius + Cuts[cut].Origin;
 
-                var vertex = new UniversalVertex
+                // Calculate UV mapping.
+                var uvX = Cuts[cut].Lenght / lenghtAntiMult;
+                var uvY = vtx / (VertsPerCut - 1.0f);
+                
+                Vertices[shift + vtx] = new UniversalVertex
                 {
-                    Position = normal * Radius + Cuts[cut].Origin,
+                    Position = position,
                     Normals = normal,
+                    UVs = new float2(uvX, uvY),
                 };
-
-                Vertices[shift + vtx] = vertex;
             }
         }
 
