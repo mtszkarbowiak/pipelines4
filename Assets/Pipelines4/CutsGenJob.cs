@@ -1,11 +1,13 @@
-﻿using System.Runtime.CompilerServices;
-using Unity.Burst;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-// Enables Burst and AggressiveInlining
 //#define AGGRESSIVE_COMPILATION
+
+#if AGGRESSIVE_COMPILATION
+using System.Runtime.CompilerServices;
+using Unity.Burst;
+#endif
 
 namespace Pipelines4
 {
@@ -34,8 +36,7 @@ namespace Pipelines4
         public bool ValidateBeforeExecution()
         {
             // Check if GlobalUp is normalized.
-            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MIN_NODES_SEPARATION_SQUARED)
-                return false;
+            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MIN_NODES_SEPARATION_SQUARED) return false;
             
             // Check if Nodes do not overlap.
             for (var i = 1; i < Nodes.Length; i++)
