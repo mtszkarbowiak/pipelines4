@@ -9,7 +9,7 @@ using Unity.Mathematics;
 
 namespace Pipelines4
 {
-    public struct GenPipeCutsJob : IJobFor
+    public struct CutsGenJob : IJobFor
     {
         private const float MIN_NODES_SEPARATION = 0.0001f;
         private const float MIN_NODES_SEPARATION_SQUARED = 

@@ -2,22 +2,30 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Pipelines4
 {
-    public class MeshGenDispatcher : MonoBehaviour
+    [RequireComponent(typeof(MeshFilter))]
+    public class PipelineMeshGenerationDispatcher : MonoBehaviour
     {
         [SerializeField] private float3[] Nodes;
         [SerializeField] private float CutMaxAngle = 0.1f;
         [SerializeField] private float MinimalBendAngle = 0.01f;
         [SerializeField] private float BendRadius = 0.1f;
 
+        private MeshFilter _meshFilter;
+        private Mesh _mesh;
+        
         private NativeList<float3> _nodesBuffer;
         private NativeList<Cut> _cutsBuffer;
         private JobHandle _jobHandle;
 
         private void Awake()
         {
+            _meshFilter = GetComponent<MeshFilter>();
+            Assert.IsNotNull(_meshFilter);
+            
             _nodesBuffer = new NativeList<float3>(128,Allocator.Persistent);
             _cutsBuffer = new NativeList<Cut>(512,Allocator.Persistent);
         }
@@ -34,7 +42,7 @@ namespace Pipelines4
             _nodesBuffer.Clear();
             _nodesBuffer.CopyFrom(Nodes);
 
-            var job = new GenPipeCutsJob()
+            var job = new CutsGenJob()
             {
                 Cuts = _cutsBuffer,
                 Nodes = _nodesBuffer,
@@ -45,7 +53,7 @@ namespace Pipelines4
             };
 
             if (job.ValidateBeforeExecution()==false)
-                throw new UnityException("Invalid Job input.");
+                throw new UnityException($"Invalid {nameof(CutsGenJob)} input.");
 
             _jobHandle = job.Schedule(_nodesBuffer.Length, new JobHandle());
             _jobHandle.Complete();
