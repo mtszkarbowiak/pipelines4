@@ -14,6 +14,8 @@ namespace Pipelines4
         [SerializeField] private float CutMaxAngle = 0.1f;
         [SerializeField] private float MinimalBendAngle = 0.01f;
         [SerializeField] private float BendRadius = 0.1f;
+        [SerializeField] private int VerticesPerCut = 7;
+        [SerializeField] private float Radius = 0.1f;
 
         private MeshFilter _meshFilter;
         private Mesh _mesh;
@@ -78,8 +80,8 @@ namespace Pipelines4
             {
                 var job2 = new UniversalMeshGenJob()
                 {
-                    VertsPerCut = 6,
-                    Radius = 0.3f,
+                    VertsPerCut = VerticesPerCut,
+                    Radius = Radius,
                     Cuts = _cutsBuffer,
                     TrIndexes = _meshTrindicesBuffer,
                     Vertices = _meshVerticesBuffer,

@@ -77,18 +77,17 @@ namespace Pipelines4
                 var angle = vtx * angleMult;
 
                 // Local position.
-                var x = math.cos(angle) * Radius;
-                var y = math.sin(angle) * Radius;
-                var localPos = new float3(x,  y, 0);
+                var x = math.cos(angle);
+                var y = math.sin(angle);
+                var normal = new float3(x,  y, 0);
                 
                 // Transformed position.
-                var position = math.mul( Cuts[cut].Matrix, localPos );
+                normal = math.mul( Cuts[cut].Matrix, normal );
 
                 var vertex = new UniversalVertex
                 {
-                    Position = position + Cuts[cut].Origin,
-                    
-                    //TODO
+                    Position = normal * Radius + Cuts[cut].Origin,
+                    Normals = normal,
                 };
 
                 Vertices[shift + vtx] = vertex;
@@ -100,23 +99,26 @@ namespace Pipelines4
         #endif
         private void AddTrIndexes(int cut)
         {
+            // Get shifts for entire cut.
             var cutTrIndexShift = (VertsPerCut - 1) * cut * 6;
             var cutVertexShift = VertsPerCut * cut;
 
             for (var s = 0; s < VertsPerCut - 1; s++)
             {
+                // Get shifts for a slice
                 var sliceIndexShift = cutTrIndexShift + s * 6;
                 var sliceVertexShift = cutVertexShift + s;
                 
+                // Calculate indices of vertices
                 var ll = sliceVertexShift;
                 var lh = sliceVertexShift + 1;
                 var hl = sliceVertexShift + VertsPerCut;
                 var hh = sliceVertexShift + VertsPerCut + 1;
 
+                // Assign them.
                 TrIndexes[sliceIndexShift + 0] = (ushort) hh;
                 TrIndexes[sliceIndexShift + 1] = (ushort) lh;
                 TrIndexes[sliceIndexShift + 2] = (ushort) ll;
-                
                 TrIndexes[sliceIndexShift + 3] = (ushort) ll;
                 TrIndexes[sliceIndexShift + 4] = (ushort) hl;
                 TrIndexes[sliceIndexShift + 5] = (ushort) hh;
