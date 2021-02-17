@@ -1,17 +1,11 @@
-﻿#define AGGRESSIVE_COMPILATION
-
-using System.Threading;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-
-#if AGGRESSIVE_COMPILATION
 using System.Runtime.CompilerServices;
-using Unity.Burst;
-#endif
 
 namespace Pipelines4
 {
+    [Unity.Burst.BurstCompile]
     public struct UniversalMeshGenJob : IJobParallelFor
     {
         private const float MIN_RADIUS = 0.1f;
@@ -48,13 +42,8 @@ namespace Pipelines4
 
         
         
-        #if AGGRESSIVE_COMPILATION
-        [BurstCompile]
-        #endif
         public void Execute(int index)
         {
-            Thread.Sleep(1);
-            
             if(index >= Cuts.Length) return;
 
             AddVerts(index);
@@ -63,9 +52,7 @@ namespace Pipelines4
                 AddTrIndexes(index);
         }
 
-        #if AGGRESSIVE_COMPILATION
-        [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
-        #endif
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddVerts(int cut)
         {
             // Shift of all indices of vertices of this cut.
@@ -103,9 +90,6 @@ namespace Pipelines4
             }
         }
 
-        #if AGGRESSIVE_COMPILATION
-        [BurstCompile][MethodImpl(MethodImplOptions.AggressiveInlining)]
-        #endif
         private void AddTrIndexes(int cut)
         {
             // Get shifts for entire cut.
