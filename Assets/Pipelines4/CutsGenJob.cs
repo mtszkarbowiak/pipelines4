@@ -1,6 +1,8 @@
 ﻿using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Assertions;
 
 //#define AGGRESSIVE_COMPILATION
 
@@ -25,7 +27,7 @@ namespace Pipelines4
         [ReadOnly] public float3 GlobalUp;
         [ReadOnly] public float CutMaxAngle, MinimalBendAngle, BendRadius;
         [ReadOnly] public NativeList<float3> Nodes;
-        [WriteOnly] public NativeList<Cut> Cuts;
+        /*[WriteOnly]*/ public NativeList<Cut> Cuts;
 
         private float3 _cachedArm;
         private float _cachedArmLength;
@@ -144,9 +146,6 @@ namespace Pipelines4
             // Check if angle isn't too small.
             if(armsAngle < MinimalBendAngle) return;
             
-            // Get Arms cross for axis of rotation.
-            var rotationAxis = math.cross(_cachedArm,nextArm);
-
             // Calculate distance between Node and points of tangency.
             var tangentDist = BendRadius * math.abs( math.tan(armsAngle / 2.0f) );
             
@@ -168,6 +167,10 @@ namespace Pipelines4
             
             // Total cuts number calculation.
             var cutsCount = (int)(armsAngle / CutMaxAngle + 1.5f);
+            
+            // Let's make sure there's no division by zero while iterating.
+            if (cutsCount <= 1) cutsCount = 2;
+            
             for (var i = 0; i < cutsCount; i++)
             {
                 // Create 
@@ -189,7 +192,6 @@ namespace Pipelines4
                 };
                 Cuts.Add(in cut);
 
-                
                 // Cache useful items from last iteration.
                 if (i != cutsCount - 1) continue;
                 
@@ -212,10 +214,14 @@ namespace Pipelines4
         private void AddEndCap()
         {
             _totalSplineLenght += math.distance(Nodes[Nodes.Length - 1], _lastSplineLenghtPoint);
-            
-            var endingCut = _lastCut;
-            endingCut.Origin = Nodes[Nodes.Length - 1];
-            endingCut.Lenght = _totalSplineLenght;
+            var origin = Nodes[Nodes.Length - 1];
+
+            var endingCut = new Cut
+            {
+                Lenght = _totalSplineLenght,
+                Matrix = _lastCut.Matrix,
+                Origin = origin
+            };
             
             Cuts.Add(in endingCut);
         }

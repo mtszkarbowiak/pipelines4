@@ -16,6 +16,7 @@ namespace Pipelines4
         [SerializeField] private float BendRadius = 0.1f;
         [SerializeField] private int VerticesPerCut = 7;
         [SerializeField] private float Radius = 0.1f;
+        [SerializeField] private bool Disable2ndJob = false;
 
         private MeshFilter _meshFilter;
         private Mesh _mesh;
@@ -38,8 +39,8 @@ namespace Pipelines4
             
             _nodesBuffer = new NativeList<float3>(64,Allocator.Persistent);
             _cutsBuffer = new NativeList<Cut>(512,Allocator.Persistent);
-            _meshTrIndicesBuffer = new NativeArray<ushort>(4096, Allocator.Persistent);
-            _meshVerticesBuffer = new NativeArray<UniversalVertex>(1024, Allocator.Persistent);
+            _meshTrIndicesBuffer = new NativeArray<ushort>(4096*2, Allocator.Persistent);
+            _meshVerticesBuffer = new NativeArray<UniversalVertex>(4096, Allocator.Persistent);
         }
 
         private void OnDestroy()
@@ -75,6 +76,8 @@ namespace Pipelines4
                 _cutsGenJobHandle = job.Schedule(_nodesBuffer.Length, new JobHandle());
                 _cutsGenJobHandle.Complete();
             }
+            
+            if(Disable2ndJob) return;
             
             // Mesh job scheduling.
             {
@@ -123,7 +126,7 @@ namespace Pipelines4
             if (_cutsBuffer.IsCreated == false) return;
 
             foreach (var t in _cutsBuffer)
-                t.DrawGizmos();
+                t.DrawGizmos(2f);
         }
     }
 }

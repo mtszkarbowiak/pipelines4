@@ -251,36 +251,38 @@ MonoBehaviour:
   - x: 0
     y: 0
     z: 0
-  - x: 1
+  - x: 10
     y: 0
     z: 0
-  - x: 1
-    y: 1
+  - x: 10
+    y: 10
     z: 0
-  - x: 2
-    y: 1
+  - x: 20
+    y: 10
     z: 0
-  - x: 2
-    y: 1
-    z: 1
-  - x: 3
-    y: 1
-    z: 1
-  - x: 4
-    y: 1
-    z: 1
-  - x: 5
-    y: 1
-    z: 1
-  - x: 6
-    y: 1
-    z: 1
-  - x: 7
-    y: 1
-    z: 1
+  - x: 20
+    y: 10
+    z: 10
+  - x: 30
+    y: 10
+    z: 10
+  - x: 40
+    y: 10
+    z: 10
+  - x: 50
+    y: 10
+    z: 10
+  - x: 60
+    y: 10
+    z: 10
+  - x: 70
+    y: 10
+    z: 10
   CutMaxAngle: 0.3
   MinimalBendAngle: 0.001
   BendRadius: 0.1
+  VerticesPerCut: 16
+  Radius: 2.54
 --- !u!4 &1154518882
 Transform:
   m_ObjectHideFlags: 0
@@ -322,7 +324,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 7691007eacf5de14b991012592d0d782, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
