@@ -211,9 +211,11 @@ namespace Pipelines4
         #endif
         private void AddEndCap()
         {
-            var endingCut = _lastCut;
+            _totalSplineLenght += math.distance(Nodes[Nodes.Length - 1], _lastSplineLenghtPoint);
             
+            var endingCut = _lastCut;
             endingCut.Origin = Nodes[Nodes.Length - 1];
+            endingCut.Lenght = _totalSplineLenght;
             
             Cuts.Add(in endingCut);
         }
