@@ -18,9 +18,9 @@ namespace Pipelines4
         
         
         [ReadOnly] public float3 GlobalUp;
-        [ReadOnly] public float CutMaxAngle, MinimalBendAngle, BendRadius;
-        [ReadOnly] public NativeList<float3> Nodes;
-        /*[WriteOnly]*/ public NativeList<Cut> Cuts;
+        [ReadOnly] public float CutMaxAngle, MinimalBendAngle;
+        [ReadOnly] public NativeList<float4> Nodes; // Node is built of position XYZ and specific radius W
+        [WriteOnly] public NativeList<Cut> Cuts;
 
         private float3 _cachedArm;
         private float _cachedArmLength;
@@ -32,18 +32,21 @@ namespace Pipelines4
         public bool ValidateBeforeExecution()
         {
             // Check if GlobalUp is normalized.
-            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MIN_NODES_SEPARATION_SQUARED) return false;
+            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MIN_NODES_SEPARATION_SQUARED)
+                return false;
             
-            // Check if Nodes do not overlap.
             for (var i = 1; i < Nodes.Length; i++)
             {
+                // Check if Nodes do not overlap.
                 var armLenSq = math.lengthsq(Nodes[i] - Nodes[i - 1]);
                 if (armLenSq < MAX_GLOBAL_UP_MAGNITUDE_DEVIATION_SQUARED)
                     return false;
+                
+                // Check if BendRadius is not too small.
+                if (Nodes[i].w < MIN_TOLERABLE_BEND_RADIUS)
+                    return false;
             }
 
-            // Check if BendRadius is not too small.
-            if (BendRadius < MIN_TOLERABLE_BEND_RADIUS) return false;
             
             // Check if Nodes is populated and Cuts empty.
             return Nodes.Length >= 2 && Cuts.IsEmpty;
@@ -76,7 +79,7 @@ namespace Pipelines4
         private void AddStartCap()
         {
             // Check direction of first 'Forward' vector.
-            var arm = Nodes[1] - Nodes[0];
+            var arm = Nodes[1].xyz - Nodes[0].xyz;
             var armLength = math.length(arm);
             var forward = arm / armLength;
 
@@ -90,7 +93,7 @@ namespace Pipelines4
             var result = new Cut()
             {
                 Lenght = 0.0f,
-                Origin = Nodes[0],
+                Origin = Nodes[0].xyz,
                 Matrix = new float3x3(right, up, forward),
             };
             
@@ -101,7 +104,7 @@ namespace Pipelines4
             _lastCut = result;
             _cachedArm = arm;
             _cachedArmLength = armLength;
-            _lastSplineLenghtPoint = Nodes[0];
+            _lastSplineLenghtPoint = Nodes[0].xyz;
         }
         
         
@@ -110,7 +113,7 @@ namespace Pipelines4
         private void AddBend(int nodeIndex)
         {
             // Obtain 
-            var nextArm = Nodes[nodeIndex+1] - Nodes[nodeIndex];
+            var nextArm = Nodes[nodeIndex+1].xyz - Nodes[nodeIndex].xyz;
             var nextArmLength = math.length(nextArm);
             var forward = nextArm / nextArmLength;
             
@@ -131,18 +134,18 @@ namespace Pipelines4
             if(armsAngle < MinimalBendAngle) return;
             
             // Calculate distance between Node and points of tangency.
-            var tangentDist = BendRadius * math.abs( math.tan(armsAngle / 2.0f) );
+            var tangentDist = Nodes[nodeIndex].w * math.abs( math.tan(armsAngle / 2.0f) );
             
             // Calculate point of tangency (before the node itself).
             // From Node itself, we back one (previous) forward (z) step of distance of tangency.
-            var tangentPoint = Nodes[nodeIndex] - _lastCut.Matrix.c2 * tangentDist;
+            var tangentPoint = Nodes[nodeIndex].xyz - _lastCut.Matrix.c2 * tangentDist;
             
             // Obtain vector perpendicular to bend plane.
             var bendPlaneNormal = math.normalize(math.cross(_lastCut.Matrix.c2, forward));
             
             // Obtain vector perpendicular to plane normal and (previous) forward.
             var tangentToCenterVector = 
-                BendRadius * math.normalize(math.cross(bendPlaneNormal, _lastCut.Matrix.c2));
+                Nodes[nodeIndex].w * math.normalize(math.cross(bendPlaneNormal, _lastCut.Matrix.c2));
 
             // Bend center.
             var center = tangentPoint + tangentToCenterVector;
@@ -172,7 +175,7 @@ namespace Pipelines4
                 {
                     Origin = origin,
                     Matrix = new float3x3(cutRight, cutUp, cutForward),
-                    Lenght = _totalSplineLenght + cutAngle * BendRadius,
+                    Lenght = _totalSplineLenght + cutAngle * Nodes[nodeIndex].w,
                 };
                 Cuts.Add(in cut);
 
@@ -184,7 +187,7 @@ namespace Pipelines4
             }
             
             // Cache useful items for next iteration.
-            _totalSplineLenght += armsAngle * BendRadius;
+            _totalSplineLenght += armsAngle * Nodes[nodeIndex].w;
             _cachedArm = nextArm;
             _cachedArmLength = nextArmLength;
         }
@@ -193,8 +196,8 @@ namespace Pipelines4
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddEndCap()
         {
-            _totalSplineLenght += math.distance(Nodes[Nodes.Length - 1], _lastSplineLenghtPoint);
-            var origin = Nodes[Nodes.Length - 1];
+            _totalSplineLenght += math.distance(Nodes[Nodes.Length - 1].xyz, _lastSplineLenghtPoint);
+            var origin = Nodes[Nodes.Length - 1].xyz;
 
             var endingCut = new Cut
             {

@@ -6,14 +6,14 @@ using System.Runtime.CompilerServices;
 namespace Pipelines4
 {
     [Unity.Burst.BurstCompile]
-    public struct UniversalMeshGenJob : IJobParallelFor
+    public struct UniversalVertexMeshGenJob : IJobParallelFor
     {
         private const float MIN_RADIUS = 0.1f;
         private const int MIN_VERTS_PER_CUT = 4, MAX_VERTS_PER_CUT = 32;
         
         
         [ReadOnly] public int VertsPerCut;
-        [ReadOnly] public float Radius;
+        [ReadOnly] public float PipeRadius;
         [ReadOnly] public NativeList<Cut> Cuts;
         [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<ushort> TrIndexes;  
         [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<UniversalVertex> Vertices;
@@ -21,7 +21,7 @@ namespace Pipelines4
 
         public bool ValidateBeforeExecution()
         {
-            if (Radius < MIN_RADIUS) return false;
+            if (PipeRadius < MIN_RADIUS) return false;
 
             if (VertsPerCut < MIN_VERTS_PER_CUT) return false;
 
@@ -62,7 +62,7 @@ namespace Pipelines4
             var angleMult = math.PI * 2 / (VertsPerCut - 1);
 
             // Anti number to be multiplied by spline lenght to get UV coordinate.
-            var lenghtAntiMult = Radius * math.PI * 2; 
+            var lenghtAntiMult = PipeRadius * math.PI * 2; 
             
             for (var vtx = 0; vtx < VertsPerCut; vtx++)
             {
@@ -75,7 +75,7 @@ namespace Pipelines4
                 
                 // Transform normal vector.
                 var normal = math.mul( Cuts[cut].Matrix, new float3(x,  y, 0) );
-                var position = normal * Radius + Cuts[cut].Origin;
+                var position = normal * PipeRadius + Cuts[cut].Origin;
 
                 // Calculate UV mapping.
                 var uvX = Cuts[cut].Lenght / lenghtAntiMult;
