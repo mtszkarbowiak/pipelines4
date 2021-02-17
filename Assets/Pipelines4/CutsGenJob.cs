@@ -1,10 +1,9 @@
-﻿using Unity.Collections;
+﻿#define AGGRESSIVE_COMPILATION
+
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
-using UnityEngine.Assertions;
 
-//#define AGGRESSIVE_COMPILATION
 
 #if AGGRESSIVE_COMPILATION
 using System.Runtime.CompilerServices;

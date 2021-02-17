@@ -1,3 +1,4 @@
+using System;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -16,17 +17,16 @@ namespace Pipelines4
         [SerializeField] private float BendRadius = 0.1f;
         [SerializeField] private int VerticesPerCut = 7;
         [SerializeField] private float Radius = 0.1f;
-        [SerializeField] private bool Disable2ndJob = false;
 
         private MeshFilter _meshFilter;
         private Mesh _mesh;
         
         private NativeList<float3> _nodesBuffer;
         private NativeList<Cut> _cutsBuffer;
-        private JobHandle _cutsGenJobHandle;
         private NativeArray<ushort> _meshTrIndicesBuffer;
         private NativeArray<UniversalVertex> _meshVerticesBuffer;
-        private JobHandle _meshGenJobHandle;
+        private JobHandle _handle1, _handle2;
+
 
         private void Awake()
         {
@@ -51,70 +51,7 @@ namespace Pipelines4
             _meshTrIndicesBuffer.Dispose();
             _meshVerticesBuffer.Dispose();
         }
-
-        private void Update()
-        {
-            _cutsBuffer.Clear();
-            _nodesBuffer.Clear();
-            _nodesBuffer.CopyFrom(Nodes);
-            
-            // Cuts job scheduling.
-            {
-                var job = new CutsGenJob()
-                {
-                    Cuts = _cutsBuffer,
-                    Nodes = _nodesBuffer,
-                    BendRadius = this.BendRadius,
-                    CutMaxAngle = this.CutMaxAngle,
-                    MinimalBendAngle = this.MinimalBendAngle,
-                    GlobalUp = new float3(0f, 1f, 0f),
-                };
-
-                if (job.ValidateBeforeExecution() == false)
-                    throw new UnityException($"Invalid {nameof(CutsGenJob)} input.");
-
-                _cutsGenJobHandle = job.Schedule(_nodesBuffer.Length, new JobHandle());
-                _cutsGenJobHandle.Complete();
-            }
-            
-            if(Disable2ndJob) return;
-            
-            // Mesh job scheduling.
-            {
-                var job2 = new UniversalMeshGenJob()
-                {
-                    VertsPerCut = VerticesPerCut,
-                    Radius = Radius,
-                    Cuts = _cutsBuffer,
-                    TrIndexes = _meshTrIndicesBuffer,
-                    Vertices = _meshVerticesBuffer,
-                };
-
-                if (job2.ValidateBeforeExecution() == false)
-                    throw new UnityException($"Invalid {nameof(UniversalMeshGenJob)} input.");
-
-                _meshGenJobHandle = job2.Schedule(_cutsBuffer.Length, 1);
-                _meshGenJobHandle.Complete();
-                
-                var verticesCount = job2.GetVerticesBufferSize();
-                var trIndicesCount = job2.GetTrIndexesBufferSize();
-                
-                //TODO Unsafe mesh update?
-                _mesh.SetVertexBufferParams(verticesCount,UniversalVertex.Layout);
-                _mesh.SetIndexBufferParams(trIndicesCount,IndexFormat.UInt16);
-                
-                _mesh.SetVertexBufferData(_meshVerticesBuffer,0,0,verticesCount);
-                _mesh.SetIndexBufferData(_meshTrIndicesBuffer, 0, 0, trIndicesCount);
-                
-                _mesh.SetSubMesh(0, new SubMeshDescriptor
-                {
-                    indexCount = trIndicesCount,
-                    vertexCount = verticesCount,
-                });
-                _mesh.RecalculateBounds();
-            }
-        }
-
+        
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.white;
@@ -127,6 +64,81 @@ namespace Pipelines4
 
             foreach (var t in _cutsBuffer)
                 t.DrawGizmos(2f);
+        }
+        
+        
+        private void Update()
+        {
+            // Clear jobs input.
+            _cutsBuffer.Clear();
+            _nodesBuffer.Clear();
+            _nodesBuffer.CopyFrom(Nodes);
+            
+            // Setup first job.
+            var job = new CutsGenJob()
+            {
+                Cuts = _cutsBuffer,
+                Nodes = _nodesBuffer,
+                BendRadius = this.BendRadius,
+                CutMaxAngle = this.CutMaxAngle,
+                MinimalBendAngle = this.MinimalBendAngle,
+                GlobalUp = new float3(0f, 1f, 0f),
+            };
+
+            // Validate input.
+            if (job.ValidateBeforeExecution() == false)
+                throw new UnityException($"Invalid {nameof(CutsGenJob)} input.");
+
+            // Schedule jobs.
+            var emptyHandle = new JobHandle();
+            _handle1 = job.Schedule(_nodesBuffer.Length, emptyHandle);
+            
+        }
+
+        private void LateUpdate()
+        {
+            // We can't use dependency, because we don't know how many Cuts gives us first job.
+            // Therefore we can't estimate number of needed threads.
+            _handle1.Complete();
+            
+            // Setup second job.
+            var job2 = new UniversalMeshGenJob()
+            {
+                VertsPerCut = VerticesPerCut,
+                Radius = Radius,
+                Cuts = _cutsBuffer,
+                TrIndexes = _meshTrIndicesBuffer,
+                Vertices = _meshVerticesBuffer,
+            };
+            
+            // Validate input.
+            if (job2.ValidateBeforeExecution() == false)
+                throw new UnityException($"Invalid {nameof(UniversalMeshGenJob)} input.");
+            
+            // Schedule it.
+            _handle2 = job2.Schedule(_cutsBuffer.Length, 5, _handle1);
+            
+            // Cache result size.
+            var _verticesCount = job2.GetVerticesBufferSize();
+            var _trIndicesCount = job2.GetTrIndexesBufferSize();
+            
+            // Wait when all cut threads are ready.
+            _handle2.Complete();
+            
+            // Use calculated data to build a result mesh.
+            _mesh.SetVertexBufferParams(_verticesCount,UniversalVertex.Layout);
+            _mesh.SetIndexBufferParams(_trIndicesCount,IndexFormat.UInt16);
+                
+            _mesh.SetVertexBufferData(_meshVerticesBuffer,0,0,_verticesCount);
+            _mesh.SetIndexBufferData(_meshTrIndicesBuffer, 0, 0, _trIndicesCount);
+                
+            _mesh.SetSubMesh(0, new SubMeshDescriptor
+            {
+                indexCount = _trIndicesCount,
+                vertexCount = _verticesCount,
+            });
+            _mesh.RecalculateBounds();
+            //TODO Unsafe mesh update?
         }
     }
 }

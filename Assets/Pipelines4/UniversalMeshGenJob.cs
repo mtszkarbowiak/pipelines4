@@ -1,9 +1,9 @@
-﻿using Unity.Collections;
+﻿#define AGGRESSIVE_COMPILATION
+
+using System.Threading;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine.UIElements;
-
-//#define AGGRESSIVE_COMPILATION
 
 #if AGGRESSIVE_COMPILATION
 using System.Runtime.CompilerServices;
@@ -53,6 +53,8 @@ namespace Pipelines4
         #endif
         public void Execute(int index)
         {
+            Thread.Sleep(1);
+            
             if(index >= Cuts.Length) return;
 
             AddVerts(index);

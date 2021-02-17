@@ -281,8 +281,9 @@ MonoBehaviour:
   CutMaxAngle: 0.3
   MinimalBendAngle: 0.001
   BendRadius: 0.1
-  VerticesPerCut: 16
-  Radius: 2.54
+  VerticesPerCut: 13
+  Radius: 0.8
+  Disable2ndJob: 0
 --- !u!4 &1154518882
 Transform:
   m_ObjectHideFlags: 0
