@@ -13,8 +13,7 @@ namespace Pipelines4
         private PipeMeshGenJobDispatcher[] _dispatchers;
         private float4[][] _nodesBuffers;
         [Range(0f,1f)] public float RoundizatorMult = 1;
-        [Range(0f,1f)] public float RoundizatorFlat = 1;
-        [Range(0.0f, math.PI / 2f)] public float MaxSlope = math.PI / 2f;
+        public float RoundizatorFlat = 1;
         
         [Header("Pipes")]
         [SerializeField] private float CutMaxAngle = 0.1f;
@@ -74,7 +73,8 @@ namespace Pipelines4
 
                     // Sub-node specific info.
                     var subNodePoint = Nodes[i] + shift * pipeShiftScalar;
-                    var subNodeRadius = Separation + pipeShiftScalar * math.abs(crossingScalar) * Separation * RoundizatorMult;
+                    var subNodeRadius = Separation + RoundizatorFlat + 
+                        pipeShiftScalar * math.abs(crossingScalar) * Separation * RoundizatorMult;
                 
                     _nodesBuffers[pipeIndex][i] = new float4(subNodePoint, subNodeRadius);
                 }
@@ -82,9 +82,11 @@ namespace Pipelines4
 
             for (var i = 0; i < _dispatchers.Length; i++)
             {
-                _nodesBuffers[i][0] = new float4(Nodes[0], 1f);
-                _nodesBuffers[i][Nodes.Length - 1] = new float4(Nodes[Nodes.Length - 1], 1f);
+                var firstDelta = Nodes[1] - Nodes[0];
+                SetupNodeDirectly(0, firstDelta, 1f);
                 
+                var lastDelta = Nodes[Nodes.Length-1] - Nodes[Nodes.Length-2];
+                SetupNodeDirectly(Nodes.Length - 1, lastDelta, 1f);
                 
                 _dispatchers[i].SetNodes(_nodesBuffers[i]);
                 
@@ -94,6 +96,20 @@ namespace Pipelines4
                 _dispatchers[i].PipeRadius = PipeRadius;
                 
                 _dispatchers[i].Dispatch();
+            }
+        }
+
+        private void SetupNodeDirectly(int nodeIndex, float3 delta, float roundization)
+        {
+            var rightVector = math.cross(new float3(0f,1f,0f),delta);
+            rightVector = math.normalize(rightVector);
+            
+            for (var pipeIndex = 0; pipeIndex < _dispatchers.Length; pipeIndex++)
+            {
+                var pipeShiftScalar = GetScalar(pipeIndex, _dispatchers.Length);
+                var shift = rightVector * pipeShiftScalar * Separation;
+                
+                _nodesBuffers[pipeIndex][nodeIndex] = new float4(Nodes[nodeIndex] + shift, roundization);
             }
         }
 
