@@ -32,10 +32,10 @@ namespace Pipelines4
             int trianglesBufferSize = 8192, 
             int verticesBufferSize = 4096)
         {
-            _nodesBuffer = new NativeList<float4>(64,Allocator.Persistent);
-            _cutsBuffer = new NativeList<Cut>(512,Allocator.Persistent);
-            _meshTrIndicesBuffer = new NativeArray<ushort>(4096*2, Allocator.Persistent);
-            _meshVerticesBuffer = new NativeArray<UniversalVertex>(4096, Allocator.Persistent);
+            _nodesBuffer = new NativeList<float4>(64,allocator);
+            _cutsBuffer = new NativeList<Cut>(512,allocator);
+            _meshTrIndicesBuffer = new NativeArray<ushort>(4096*2, allocator);
+            _meshVerticesBuffer = new NativeArray<UniversalVertex>(4096, allocator);
 
             CurrentState = State.Idle;
         }
@@ -141,6 +141,8 @@ namespace Pipelines4
 
         public void Dispose()
         {
+            ClearBuffers();
+            
             _nodesBuffer.Dispose();
             _cutsBuffer.Dispose();
             _meshTrIndicesBuffer.Dispose();

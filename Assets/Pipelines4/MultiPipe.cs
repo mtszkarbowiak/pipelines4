@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Pipelines4
 {
+    [Obsolete]
     public class MultiPipe : MonoBehaviour
     {
         public float3[] Nodes;
