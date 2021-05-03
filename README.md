@@ -1,6 +1,6 @@
 # Pipelines
 
-![](C:\Repositories\Unity\Pipelines4\Docs\Pipelines.png)
+![](Docs\Pipelines.png)
 
 ## Description
 
@@ -17,7 +17,7 @@ Library...
 
 > Some colors in GIFs can buggy due to the compression.
 
-![](C:\Repositories\Unity\Pipelines4\Docs\Animation1.gif)
+![](Docs\Animation1.gif)
 
 `MonoPipe` has the following elements:
 
@@ -33,7 +33,7 @@ The library also contains automatic `HorizontalMultiPipe`.
 >
 > Pipes will not appear if the input is invalid (e.g. pipes create angle that disallows making horizontal layout).
 
-![](C:\Repositories\Unity\Pipelines4\Docs\Animation2.gif)
+![](Docs\Animation2.gif)
 
 Both components update each frame unless disabled.
 
@@ -49,7 +49,7 @@ The system utilizes Jobs and Burst compiler without any workarounds. Generating 
 
 And final screenshot of the profiler :>
 
-![](C:\Repositories\Unity\Pipelines4\Docs\Profiler.png)
+![](Docs\Profiler.png)
 
 ## License
 
