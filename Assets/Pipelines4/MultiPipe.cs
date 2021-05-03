@@ -1,34 +1,47 @@
-using System;
+using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Pipelines4
 {
-    [Obsolete]
     public class MultiPipe : MonoBehaviour
     {
         public float3[] Nodes;
-        public float Separation;
-        public MeshFilter[] _pipeRenderers;
-        private PipeMeshGenJobDispatcher[] _dispatchers;
-        private float4[][] _nodesBuffers;
-        [Range(0f,1f)] public float RoundizatorMult = 1;
-        public float RoundizatorFlat = 1;
         
-        [Header("Pipes")]
-        [SerializeField] private float CutMaxAngle = 0.1f;
-        [SerializeField] private float MinimalBendAngle = 0.01f;
-        [SerializeField] private int VerticesPerCut = 7;
-        [SerializeField] private float PipeRadius = 0.1f;
+        [Tooltip("Distance between pipes")]
+        public float Separation;
+        
+        [Range(0f,1f)][Tooltip("Multiplicative component for calculation of bend radius.")]
+        public float RoundizatorMult = 1;
+        
+        [Tooltip("Linear component for calculation of bend radius.")]
+        public float RoundizatorFlat = 1f;
+        
+        [Tooltip("")]
+        public float CutMaxAngle = 0.15f;
+        
+        
+        public float MinimalBendAngle = 0.05f;
+        
+        [Tooltip("True number of vertices per one cut of one pipe. Visible number is smaller by one.")]
+        public int VerticesPerCut = 7;
+        
+        public float PipeRadius = 0.2f;
+        
+        private MeshFilter[] _pipeRenderers;
+        private PipeJobsDispatcher[] _dispatchers;
+        private float4[][] _nodesBuffers;
         
         
         private void Awake()
         {
-            _dispatchers = new PipeMeshGenJobDispatcher[_pipeRenderers.Length];
+            _pipeRenderers = GetComponentsInChildren<MeshFilter>().ToArray();
+
+            _dispatchers = new PipeJobsDispatcher[_pipeRenderers.Length];
 
             for (var i = 0; i < _pipeRenderers.Length; i++)
-                _dispatchers[i] = new PipeMeshGenJobDispatcher(Allocator.Persistent);
+                _dispatchers[i] = new PipeJobsDispatcher(Allocator.Persistent);
 
             _nodesBuffers = new float4[_pipeRenderers.Length][];
 
@@ -70,7 +83,7 @@ namespace Pipelines4
                 for (var pipeIndex = 0; pipeIndex < _dispatchers.Length; pipeIndex++)
                 {
                     // Scalar for shift corresponding to specific pipe index.
-                    var pipeShiftScalar = GetScalar(pipeIndex, _dispatchers.Length);
+                    var pipeShiftScalar = GetArmScalar(pipeIndex, _dispatchers.Length);
 
                     // Sub-node specific info.
                     var subNodePoint = Nodes[i] + shift * pipeShiftScalar;
@@ -107,7 +120,7 @@ namespace Pipelines4
             
             for (var pipeIndex = 0; pipeIndex < _dispatchers.Length; pipeIndex++)
             {
-                var pipeShiftScalar = GetScalar(pipeIndex, _dispatchers.Length);
+                var pipeShiftScalar = GetArmScalar(pipeIndex, _dispatchers.Length);
                 var shift = rightVector * pipeShiftScalar * Separation;
                 
                 _nodesBuffers[pipeIndex][nodeIndex] = new float4(Nodes[nodeIndex] + shift, roundization);
@@ -126,7 +139,7 @@ namespace Pipelines4
                 dispatcher.Dispose();
         }
 
-        private static float GetScalar(int index, int len){
+        private static float GetArmScalar(int index, int len){
             return -(len - 1)/2f + index;
         }
 

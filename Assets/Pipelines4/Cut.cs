@@ -4,11 +4,17 @@ using UnityEngine;
 
 namespace Pipelines4
 {
+    /// <summary>Defines local space in the vicinity of a point on spline.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Cut
     {
+        /// <summary>Local space matrix.</summary>
         public float3x3 Matrix;
+        
+        /// <summary>Point located on a spline translating all cut's points.</summary>
         public float3 Origin;
+        
+        /// <summary>Total traversed distance by a spline.</summary>
         public float Lenght;
 
         public void DrawGizmos( float size = 0.1f )

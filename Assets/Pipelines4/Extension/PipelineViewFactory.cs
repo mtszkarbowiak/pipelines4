@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Collections;
-using Unity.Mathematics;
 
 namespace Pipelines4
 {
@@ -28,7 +25,7 @@ namespace Pipelines4
         private Transform _activeSupportViewsPoolParent;
         private Transform _idleSupportViewsPoolParent;
 
-        private ConcurrentBag<PipeMeshGenJobDispatcher> _dispatchersPool;
+        private ConcurrentBag<PipeJobsDispatcher> _dispatchersPool;
         private ConcurrentDictionary<ulong, PipelineViewController> _activeViews;
         private ConcurrentBag<PipelineViewController> _viewsPool;
 
@@ -73,12 +70,12 @@ namespace Pipelines4
             
             // Feed internal data.
             
-            _dispatchersPool = new ConcurrentBag<PipeMeshGenJobDispatcher>();
+            _dispatchersPool = new ConcurrentBag<PipeJobsDispatcher>();
             _activeViews = new ConcurrentDictionary<ulong, PipelineViewController>();
             _viewsPool = new ConcurrentBag<PipelineViewController>();
 
             for (var i = 0; i < DISPATCHERS_POOL_FEED; i++)
-                _dispatchersPool.Add( new PipeMeshGenJobDispatcher(Allocator.Persistent));
+                _dispatchersPool.Add( new PipeJobsDispatcher(Allocator.Persistent));
             for (var i = 0; i < VIEWS_POOL_FEED; i++)
                 _viewsPool.Add( new PipelineViewController());
         }

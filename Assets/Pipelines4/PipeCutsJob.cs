@@ -6,15 +6,15 @@ using System.Runtime.CompilerServices;
 namespace Pipelines4
 {
     [Unity.Burst.BurstCompile]
-    public struct CutsGenJob : IJobFor
+    public struct PipeCutsJob : IJobFor
     {
-        private const float MIN_NODES_SEPARATION = 0.0001f;
-        private const float MIN_NODES_SEPARATION_SQUARED = 
-            MIN_NODES_SEPARATION * MIN_NODES_SEPARATION;
-        private const float MAX_GLOBAL_UP_MAGNITUDE_DEVIATION = 0.0001f;
-        private const float MAX_GLOBAL_UP_MAGNITUDE_DEVIATION_SQUARED = 
-            MAX_GLOBAL_UP_MAGNITUDE_DEVIATION * MAX_GLOBAL_UP_MAGNITUDE_DEVIATION;
-        private const float MIN_TOLERABLE_BEND_RADIUS = 0.001f;
+        private const float MinNodesSeparation = 0.0001f;
+        private const float MinNodesSeparationSquared = 
+            MinNodesSeparation * MinNodesSeparation;
+        private const float MaxGlobalUpMagnitudeDeviation = 0.0001f;
+        private const float MaxGlobalUpMagnitudeDeviationSquared = 
+            MaxGlobalUpMagnitudeDeviation * MaxGlobalUpMagnitudeDeviation;
+        private const float MinTolerableBendRadius = 0.001f;
         
         
         [ReadOnly] public float3 GlobalUp;
@@ -32,18 +32,18 @@ namespace Pipelines4
         public bool ValidateBeforeExecution()
         {
             // Check if GlobalUp is normalized.
-            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MIN_NODES_SEPARATION_SQUARED)
+            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MinNodesSeparationSquared)
                 return false;
             
             for (var i = 1; i < Nodes.Length; i++)
             {
                 // Check if Nodes do not overlap.
                 var armLenSq = math.lengthsq(Nodes[i] - Nodes[i - 1]);
-                if (armLenSq < MAX_GLOBAL_UP_MAGNITUDE_DEVIATION_SQUARED)
+                if (armLenSq < MaxGlobalUpMagnitudeDeviationSquared)
                     return false;
                 
                 // Check if BendRadius is not too small.
-                if (Nodes[i].w < MIN_TOLERABLE_BEND_RADIUS)
+                if (Nodes[i].w < MinTolerableBendRadius)
                     return false;
             }
 

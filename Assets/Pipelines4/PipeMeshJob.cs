@@ -6,26 +6,26 @@ using System.Runtime.CompilerServices;
 namespace Pipelines4
 {
     [Unity.Burst.BurstCompile]
-    public struct UniversalVertexMeshGenJob : IJobParallelFor
+    public struct PipeMeshJob : IJobParallelFor
     {
-        private const float MIN_RADIUS = 0.1f;
-        private const int MIN_VERTS_PER_CUT = 4, MAX_VERTS_PER_CUT = 32;
+        private const float MinRadius = 0.1f;
+        private const int MinVertsPerCut = 4, MaxVertsPerCut = 32;
         
         
         [ReadOnly] public int VertsPerCut;
         [ReadOnly] public float PipeRadius;
         [ReadOnly] public NativeList<Cut> Cuts;
         [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<ushort> TrIndexes;  
-        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<UniversalVertex> Vertices;
+        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<Vertex> Vertices;
 
 
         public bool ValidateBeforeExecution()
         {
-            if (PipeRadius < MIN_RADIUS) return false;
+            if (PipeRadius < MinRadius) return false;
 
-            if (VertsPerCut < MIN_VERTS_PER_CUT) return false;
+            if (VertsPerCut < MinVertsPerCut) return false;
 
-            if (VertsPerCut > MAX_VERTS_PER_CUT) return false;
+            if (VertsPerCut > MaxVertsPerCut) return false;
             
             return true;
         }
@@ -81,7 +81,7 @@ namespace Pipelines4
                 var uvX = Cuts[cut].Lenght / lenghtAntiMult;
                 var uvY = vtx / (VertsPerCut - 1.0f);
                 
-                Vertices[shift + vtx] = new UniversalVertex
+                Vertices[shift + vtx] = new Vertex
                 {
                     Position = position,
                     Normals = normal,

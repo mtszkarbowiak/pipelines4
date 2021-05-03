@@ -4,15 +4,16 @@ using UnityEngine.Rendering;
 
 namespace Pipelines4
 {
+    /// <summary>Standard universal sequential vertex.</summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct UniversalVertex
+    public struct Vertex
     {
         public float3 Position;
         public float3 Normals;
         public float4 Tangents;
         public float2 UVs;
         
-        public readonly static VertexAttributeDescriptor[] Layout = {
+        public static readonly VertexAttributeDescriptor[] Layout = {
             new VertexAttributeDescriptor(VertexAttribute.Position),
             new VertexAttributeDescriptor(VertexAttribute.Normal),
             new VertexAttributeDescriptor(VertexAttribute.Tangent, VertexAttributeFormat.Float32, 4),

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -9,7 +7,7 @@ using UnityEngine.Rendering;
 
 namespace Pipelines4
 {
-    public class PipeMeshGenJobDispatcher : IDisposable
+    public class PipeJobsDispatcher : IDisposable
     {
         public float CutMaxAngle = 0.1f;
         public float MinimalBendAngle = 0.01f;
@@ -19,23 +17,23 @@ namespace Pipelines4
         private NativeList<float4> _nodesBuffer;
         private NativeList<Cut> _cutsBuffer;
         private NativeArray<ushort> _meshTrIndicesBuffer;
-        private NativeArray<UniversalVertex> _meshVerticesBuffer;
+        private NativeArray<Vertex> _meshVerticesBuffer;
         private JobHandle _handle1, _handle2;
         
         public State CurrentState { get; private set; }
         
 
-        public PipeMeshGenJobDispatcher(
+        public PipeJobsDispatcher(
             Allocator allocator, 
             int nodesBufferSize = 64,
             int cutsBufferSize = 512,
             int trianglesBufferSize = 8192, 
             int verticesBufferSize = 4096)
         {
-            _nodesBuffer = new NativeList<float4>(64,allocator);
-            _cutsBuffer = new NativeList<Cut>(512,allocator);
-            _meshTrIndicesBuffer = new NativeArray<ushort>(4096*2, allocator);
-            _meshVerticesBuffer = new NativeArray<UniversalVertex>(4096, allocator);
+            _nodesBuffer = new NativeList<float4>(nodesBufferSize,allocator);
+            _cutsBuffer = new NativeList<Cut>(cutsBufferSize,allocator);
+            _meshTrIndicesBuffer = new NativeArray<ushort>(trianglesBufferSize, allocator);
+            _meshVerticesBuffer = new NativeArray<Vertex>(verticesBufferSize, allocator);
 
             CurrentState = State.Idle;
         }
@@ -64,18 +62,18 @@ namespace Pipelines4
         public void Dispatch()
         {
             // Setup first job.
-            var job = new CutsGenJob()
+            var job = new PipeCutsJob()
             {
                 Cuts = _cutsBuffer,
                 Nodes = _nodesBuffer,
-                CutMaxAngle = this.CutMaxAngle,
-                MinimalBendAngle = this.MinimalBendAngle,
+                CutMaxAngle = CutMaxAngle,
+                MinimalBendAngle = MinimalBendAngle,
                 GlobalUp = new float3(0f, 1f, 0f),
             };
 
             // Validate input.
             if (job.ValidateBeforeExecution() == false)
-                throw new UnityException($"Invalid {nameof(CutsGenJob)} input.");
+                throw new UnityException($"Invalid {nameof(PipeCutsJob)} input.");
 
             // Schedule jobs.
             var emptyHandle = new JobHandle();
@@ -92,7 +90,7 @@ namespace Pipelines4
             _handle1.Complete();
             
             // Setup second job.
-            var job2 = new UniversalVertexMeshGenJob()
+            var job2 = new PipeMeshJob()
             {
                 VertsPerCut = VerticesPerCut,
                 PipeRadius = PipeRadius,
@@ -103,7 +101,7 @@ namespace Pipelines4
             
             // Validate input.
             if (job2.ValidateBeforeExecution() == false)
-                throw new UnityException($"Invalid {nameof(UniversalVertexMeshGenJob)} input.");
+                throw new UnityException($"Invalid {nameof(PipeMeshJob)} input.");
             
             // Schedule it.
             _handle2 = job2.Schedule(_cutsBuffer.Length, 5, _handle1);
@@ -116,7 +114,7 @@ namespace Pipelines4
             _handle2.Complete();
             
             // Use calculated data to build a result mesh.
-            targetMesh.SetVertexBufferParams(_verticesCount,UniversalVertex.Layout);
+            targetMesh.SetVertexBufferParams(_verticesCount,Vertex.Layout);
             targetMesh.SetIndexBufferParams(_trIndicesCount,IndexFormat.UInt16);
                 
             targetMesh.SetVertexBufferData(_meshVerticesBuffer,0,0,_verticesCount);
@@ -132,11 +130,6 @@ namespace Pipelines4
             
             
             CurrentState = State.Idle;
-        }
-
-        public bool IsCompleted()
-        {
-            return  _handle1.IsCompleted && _handle2.IsCompleted;
         }
 
         public void Dispose()
@@ -167,22 +160,6 @@ namespace Pipelines4
             foreach (var t in _cutsBuffer)
                 t.DrawGizmos(2f);
         }
-        
-        
-        #if DEBUG
-
-        ~PipeMeshGenJobDispatcher()
-        {
-            if (_nodesBuffer.IsCreated || 
-                _cutsBuffer.IsCreated || 
-                _meshVerticesBuffer.IsCreated || 
-                _meshVerticesBuffer.IsCreated)
-                
-                throw new ObjectDisposedException(
-                    $"{nameof(PipeMeshGenJobDispatcher)} not disposed!");
-        }
-        
-        #endif
 
         public enum State
         {
