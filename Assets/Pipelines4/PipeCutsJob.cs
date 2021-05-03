@@ -9,13 +9,13 @@ namespace AuroraSeeker.Pipelines4
     public struct PipeCutsJob : IJobFor
     {
         private const float MinNodesSeparation = 0.0001f;
-        private const float MinNodesSeparationSquared = 
-            MinNodesSeparation * MinNodesSeparation;
         private const float MaxGlobalUpMagnitudeDeviation = 0.0001f;
-        private const float MaxGlobalUpMagnitudeDeviationSquared = 
-            MaxGlobalUpMagnitudeDeviation * MaxGlobalUpMagnitudeDeviation;
+        private const float MinHorizontalLength = 0.1f;
         private const float MinTolerableBendRadius = 0.001f;
         
+        private const float MinNodesSeparationSquared = MinNodesSeparation * MinNodesSeparation;
+        private const float MaxGlobalUpMagnitudeDeviationSquared = MaxGlobalUpMagnitudeDeviation * MaxGlobalUpMagnitudeDeviation;
+        private const float MinHorizontalLengthSquared = MinHorizontalLength * MinHorizontalLength;
         
         [ReadOnly] public float3 GlobalUp;
         [ReadOnly] public float CutMaxAngle, MinimalBendAngle;
@@ -32,18 +32,25 @@ namespace AuroraSeeker.Pipelines4
         public bool ValidateBeforeExecution()
         {
             // Check if GlobalUp is normalized.
-            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MinNodesSeparationSquared)
+            if (math.abs(math.lengthsq(GlobalUp) - 1.0f) > MaxGlobalUpMagnitudeDeviationSquared)
                 return false;
             
             for (var i = 1; i < Nodes.Length; i++)
             {
+                var delta = Nodes[i] - Nodes[i - 1];
+                
                 // Check if Nodes do not overlap.
-                var armLenSq = math.lengthsq(Nodes[i] - Nodes[i - 1]);
-                if (armLenSq < MaxGlobalUpMagnitudeDeviationSquared)
+                var armLenSq = math.lengthsq(delta);
+                if (armLenSq < MinNodesSeparationSquared)
                     return false;
                 
                 // Check if BendRadius is not too small.
                 if (Nodes[i].w < MinTolerableBendRadius)
+                    return false;
+                
+                // Check if segment is not vertical
+                var armLenProj2dSq = math.lengthsq(delta.xz);
+                if (armLenProj2dSq < MinHorizontalLengthSquared)
                     return false;
             }
 

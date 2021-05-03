@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -29,26 +30,25 @@ namespace AuroraSeeker.Pipelines4
         
         public float PipeRadius = 0.2f;
         
-        private MeshFilter[] _pipeRenderers;
+        private MeshFilter[] _meshFilters;
         private PipeJobsDispatcher[] _dispatchers;
         private float4[][] _nodesBuffers;
         
-        
         private void Awake()
         {
-            _pipeRenderers = GetComponentsInChildren<MeshFilter>().ToArray();
+            _meshFilters = GetComponentsInChildren<MeshFilter>().ToArray();
 
-            _dispatchers = new PipeJobsDispatcher[_pipeRenderers.Length];
+            _dispatchers = new PipeJobsDispatcher[_meshFilters.Length];
 
-            for (var i = 0; i < _pipeRenderers.Length; i++)
+            for (var i = 0; i < _meshFilters.Length; i++)
                 _dispatchers[i] = new PipeJobsDispatcher(Allocator.Persistent);
 
-            _nodesBuffers = new float4[_pipeRenderers.Length][];
+            _nodesBuffers = new float4[_meshFilters.Length][];
 
             for (var i = 0; i < _nodesBuffers.Length; i++)
                 _nodesBuffers[i] = new float4[Nodes.Length];
 
-            foreach (var t in _pipeRenderers)
+            foreach (var t in _meshFilters)
             {
                 t.mesh = new Mesh();
             }
@@ -108,8 +108,15 @@ namespace AuroraSeeker.Pipelines4
                 _dispatchers[i].MinimalBendAngle = MinimalBendAngle;
                 _dispatchers[i].VerticesPerCut = VerticesPerCut;
                 _dispatchers[i].PipeRadius = PipeRadius;
-                
-                _dispatchers[i].Dispatch();
+
+                try
+                {
+                    _dispatchers[i].Dispatch();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError(ex);
+                }
             }
         }
 
@@ -130,7 +137,11 @@ namespace AuroraSeeker.Pipelines4
         private void LateUpdate()
         {
             for (var i = 0; i < _dispatchers.Length; i++)
-                _dispatchers[i].Complete(_pipeRenderers[i].sharedMesh);
+            {
+                if(_dispatchers[i].CurrentState != PipeJobsDispatcher.State.Dispatched) continue;
+                
+                _dispatchers[i].Complete(_meshFilters[i].sharedMesh);
+            }
         }
         
         private void OnDestroy()
