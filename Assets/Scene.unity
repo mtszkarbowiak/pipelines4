@@ -627,7 +627,6 @@ GameObject:
   - component: {fileID: 983040041}
   - component: {fileID: 983040040}
   - component: {fileID: 983040039}
-  - component: {fileID: 983040038}
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -635,45 +634,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &983040038
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 983040037}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 209f2ecab8984e2ea83e36e6885d0ee9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Nodes:
-  - x: 0
-    y: 0
-    z: 0
-    w: 1
-  - x: 10
-    y: 0
-    z: 0
-    w: 1
-  - x: 15
-    y: 0
-    z: 0
-    w: 1
-  - x: 20
-    y: 0
-    z: 0
-    w: 1
-  - x: 30
-    y: 0
-    z: 0
-    w: 1
-  CutMaxAngle: 0.1
-  MinimalBendAngle: 0.01
-  VerticesPerCut: 7
-  PipeRadius: 0.1
-  _meshFilter: {fileID: 0}
-  _mesh: {fileID: 0}
 --- !u!23 &983040039
 MeshRenderer:
   m_ObjectHideFlags: 0
