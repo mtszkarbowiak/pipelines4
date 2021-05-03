@@ -86,6 +86,7 @@ namespace AuroraSeeker.Pipelines4
                     Position = position,
                     Normals = normal,
                     UVs = new float2(uvX, uvY),
+                    Tangents = new float4(uvY, uvX, 0f, 1f)
                 };
             }
         }

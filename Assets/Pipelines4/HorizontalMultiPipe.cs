@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace AuroraSeeker.Pipelines4
 {
-    public class MultiPipe : MonoBehaviour
+    [SelectionBase]
+    public class HorizontalMultiPipe : MonoBehaviour
     {
         public float3[] Nodes;
         
