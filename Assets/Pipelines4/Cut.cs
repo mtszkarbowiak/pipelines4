@@ -2,7 +2,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     /// <summary>Defines local space in the vicinity of a point on spline.</summary>
     [StructLayout(LayoutKind.Sequential)]

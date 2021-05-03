@@ -2,7 +2,7 @@
 using Unity.Mathematics;
 using UnityEngine.Rendering;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     /// <summary>Standard universal sequential vertex.</summary>
     [StructLayout(LayoutKind.Sequential)]

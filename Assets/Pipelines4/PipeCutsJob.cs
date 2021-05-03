@@ -1,9 +1,9 @@
-﻿using Unity.Collections;
+﻿using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Runtime.CompilerServices;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     [Unity.Burst.BurstCompile]
     public struct PipeCutsJob : IJobFor

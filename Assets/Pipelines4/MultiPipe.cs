@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     public class MultiPipe : MonoBehaviour
     {

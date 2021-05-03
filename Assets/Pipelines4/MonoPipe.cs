@@ -1,8 +1,10 @@
 ﻿using Unity.Collections;
 using Unity.Mathematics;
+using UnityEditor;
+using UnityEditor.Graphs;
 using UnityEngine;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
@@ -51,6 +53,9 @@ namespace Pipelines4
 
         private void OnDrawGizmos()
         {
+            for (var i = 0; i < Nodes.Length - 1; i++)
+                Gizmos.DrawLine(Nodes[i].xyz,Nodes[i+1].xyz);
+            
             _dispatcher?.DrawGizmos();
         }
     }

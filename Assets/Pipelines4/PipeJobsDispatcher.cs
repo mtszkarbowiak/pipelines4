@@ -5,7 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4
 {
     public class PipeJobsDispatcher : IDisposable
     {

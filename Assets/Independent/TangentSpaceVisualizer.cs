@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Pipelines4
+namespace AuroraSeeker.Pipelines4.Independent
 {
 	public class TangentSpaceVisualizer : MonoBehaviour
 	{
