@@ -19,26 +19,26 @@ namespace AuroraSeeker.Pipelines4
         private NativeArray<ushort> _meshTrIndicesBuffer;
         private NativeArray<Vertex> _meshVerticesBuffer;
         private JobHandle _handle1, _handle2;
-        
+
         public State CurrentState { get; private set; }
-        
+
 
         public PipeJobsDispatcher(
-            Allocator allocator, 
+            Allocator allocator,
             int nodesBufferSize = 64,
             int cutsBufferSize = 512,
-            int trianglesBufferSize = 8192, 
+            int trianglesBufferSize = 8192,
             int verticesBufferSize = 4096)
         {
-            _nodesBuffer = new NativeList<float4>(nodesBufferSize,allocator);
-            _cutsBuffer = new NativeList<Cut>(cutsBufferSize,allocator);
+            _nodesBuffer = new NativeList<float4>(nodesBufferSize, allocator);
+            _cutsBuffer = new NativeList<Cut>(cutsBufferSize, allocator);
             _meshTrIndicesBuffer = new NativeArray<ushort>(trianglesBufferSize, allocator);
             _meshVerticesBuffer = new NativeArray<Vertex>(verticesBufferSize, allocator);
 
             CurrentState = State.Idle;
         }
-        
-        
+
+
         public void SetNodes(float4[] nodes)
         {
             ClearBuffers();
@@ -49,7 +49,7 @@ namespace AuroraSeeker.Pipelines4
         public void SetNodes(in NativeArray<float4> nodes)
         {
             ClearBuffers();
-            
+
             _nodesBuffer.CopyFrom(nodes);
         }
 
@@ -78,17 +78,17 @@ namespace AuroraSeeker.Pipelines4
             // Schedule jobs.
             var emptyHandle = new JobHandle();
             _handle1 = job.Schedule(_nodesBuffer.Length, emptyHandle);
-            
-            
+
+
             CurrentState = State.Dispatched;
         }
 
-        public void Complete( Mesh targetMesh )
+        public void Complete(Mesh targetMesh)
         {
             // We can't use dependency, because we don't know how many Cuts gives us first job.
             // Therefore we can't estimate number of needed threads.
             _handle1.Complete();
-            
+
             // Setup second job.
             var job2 = new PipeMeshJob()
             {
@@ -98,44 +98,42 @@ namespace AuroraSeeker.Pipelines4
                 TrIndexes = _meshTrIndicesBuffer,
                 Vertices = _meshVerticesBuffer,
             };
-            
+
             // Validate input.
             if (job2.ValidateBeforeExecution() == false)
                 throw new UnityException($"Invalid {nameof(PipeMeshJob)} input.");
-            
+
             // Schedule it.
             _handle2 = job2.Schedule(_cutsBuffer.Length, 5, _handle1);
-            
+
             // Cache result size.
             var _verticesCount = job2.GetVerticesBufferSize();
             var _trIndicesCount = job2.GetTrIndexesBufferSize();
-            
+
             // Wait when all cut threads are ready.
             _handle2.Complete();
-            
+
             // Use calculated data to build a result mesh.
-            targetMesh.SetVertexBufferParams(_verticesCount,Vertex.Layout);
-            targetMesh.SetIndexBufferParams(_trIndicesCount,IndexFormat.UInt16);
-                
-            targetMesh.SetVertexBufferData(_meshVerticesBuffer,0,0,_verticesCount);
+            targetMesh.SetVertexBufferParams(_verticesCount, Vertex.Layout);
+            targetMesh.SetIndexBufferParams(_trIndicesCount, IndexFormat.UInt16);
+
+            targetMesh.SetVertexBufferData(_meshVerticesBuffer, 0, 0, _verticesCount);
             targetMesh.SetIndexBufferData(_meshTrIndicesBuffer, 0, 0, _trIndicesCount);
-                
+
             targetMesh.SetSubMesh(0, new SubMeshDescriptor
             {
                 indexCount = _trIndicesCount,
                 vertexCount = _verticesCount,
             });
             targetMesh.RecalculateBounds();
-            //TODO Unsafe mesh update?
-            
-            
+
             CurrentState = State.Idle;
         }
 
         public void Dispose()
         {
             ClearBuffers();
-            
+
             _nodesBuffer.Dispose();
             _cutsBuffer.Dispose();
             _meshTrIndicesBuffer.Dispose();
@@ -150,11 +148,11 @@ namespace AuroraSeeker.Pipelines4
             Gizmos.color = Color.white;
             foreach (var t in _nodesBuffer)
                 Gizmos.DrawSphere(t.xyz, 0.1f);
-            
+
             Gizmos.color = Color.grey;
             for (var i = 0; i < _nodesBuffer.Length - 1; i++)
-                Gizmos.DrawLine(_nodesBuffer[i].xyz, _nodesBuffer[i+1].xyz);
-            
+                Gizmos.DrawLine(_nodesBuffer[i].xyz, _nodesBuffer[i + 1].xyz);
+
             if (_cutsBuffer.IsCreated == false) return;
 
             foreach (var t in _cutsBuffer)

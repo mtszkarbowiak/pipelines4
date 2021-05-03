@@ -10,13 +10,17 @@ namespace AuroraSeeker.Pipelines4
     {
         private const float MinRadius = 0.1f;
         private const int MinVertsPerCut = 4, MaxVertsPerCut = 32;
-        
-        
+
+
         [ReadOnly] public int VertsPerCut;
         [ReadOnly] public float PipeRadius;
         [ReadOnly] public NativeList<Cut> Cuts;
-        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<ushort> TrIndexes;  
-        [WriteOnly][NativeDisableParallelForRestriction] public NativeArray<Vertex> Vertices;
+
+        [WriteOnly] [NativeDisableParallelForRestriction]
+        public NativeArray<ushort> TrIndexes;
+
+        [WriteOnly] [NativeDisableParallelForRestriction]
+        public NativeArray<Vertex> Vertices;
 
 
         public bool ValidateBeforeExecution()
@@ -26,7 +30,7 @@ namespace AuroraSeeker.Pipelines4
             if (VertsPerCut < MinVertsPerCut) return false;
 
             if (VertsPerCut > MaxVertsPerCut) return false;
-            
+
             return true;
         }
 
@@ -40,15 +44,14 @@ namespace AuroraSeeker.Pipelines4
             return (Cuts.Length - 1) * (VertsPerCut - 1) * 3 * 2;
         }
 
-        
-        
+
         public void Execute(int index)
         {
-            if(index >= Cuts.Length) return;
+            if (index >= Cuts.Length) return;
 
             AddVerts(index);
-            
-            if(index < Cuts.Length - 1 )
+
+            if (index < Cuts.Length - 1)
                 AddTrIndexes(index);
         }
 
@@ -57,13 +60,13 @@ namespace AuroraSeeker.Pipelines4
         {
             // Shift of all indices of vertices of this cut.
             var shift = cut * VertsPerCut;
-            
+
             // Radians angle of one cut 'slice' (per vertex, except of last one).
             var angleMult = math.PI * 2 / (VertsPerCut - 1);
 
             // Anti number to be multiplied by spline lenght to get UV coordinate.
-            var lenghtAntiMult = PipeRadius * math.PI * 2; 
-            
+            var lenghtAntiMult = PipeRadius * math.PI * 2;
+
             for (var vtx = 0; vtx < VertsPerCut; vtx++)
             {
                 // Angle of vertex.
@@ -72,21 +75,24 @@ namespace AuroraSeeker.Pipelines4
                 // Local position.
                 var x = math.cos(angle);
                 var y = math.sin(angle);
-                
+
                 // Transform normal vector.
-                var normal = math.mul( Cuts[cut].Matrix, new float3(x,  y, 0) );
+                var normal = math.mul(Cuts[cut].Matrix, new float3(x, y, 0));
                 var position = normal * PipeRadius + Cuts[cut].Origin;
 
                 // Calculate UV mapping.
                 var uvX = Cuts[cut].Lenght / lenghtAntiMult;
                 var uvY = vtx / (VertsPerCut - 1.0f);
-                
+
+                var uvs = new float2(uvX, uvY);
+                var tangents = new float4(math.mul(Cuts[cut].Matrix, new float3(0, 0, 1)), 1);
+
                 Vertices[shift + vtx] = new Vertex
                 {
                     Position = position,
                     Normals = normal,
-                    UVs = new float2(uvX, uvY),
-                    Tangents = new float4(uvY, uvX, 0f, 1f)
+                    UVs = uvs,
+                    Tangents = tangents
                 };
             }
         }
@@ -102,7 +108,7 @@ namespace AuroraSeeker.Pipelines4
                 // Get shifts for a slice
                 var sliceIndexShift = cutTrIndexShift + s * 6;
                 var sliceVertexShift = cutVertexShift + s;
-                
+
                 // Calculate indices of vertices
                 var ll = sliceVertexShift;
                 var lh = sliceVertexShift + 1;
